@@ -117,7 +117,7 @@ module Create
   end
 
   def self.path_exist(path)
-    puts "Path exist: #{path}"
+    puts "Failed to write, path exists: #{path}"
     exit
   end
 
