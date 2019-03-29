@@ -61,11 +61,19 @@ module Create
     s.bytes.select{ |e| (0x20..0x7f)===e.ord }.map(&:chr).join
   end
 
-  def self.make_cmd( pw1, pw2 )
+  def self.make_cmd( pw1, pass )
     data = make_data(pw1)
-    p data
-    p clean(data)
 
+    salt = OpenSSL::Random.random_bytes(20)
+    enc = OpenSSL::Cipher.new("AES-256-CBC")
+    enc.encrypt
+    key_iv = OpenSSL::PKCS5.pbkdf2_hmac_sha1(pass, salt, 2000, enc.key_len + enc.iv_len)
+    key = key_iv[0, enc.key_len]
+    iv = key_iv[enc.key_len, enc.iv_len]
+    enc.key = key
+    enc.iv = iv
+    encrypted_data = enc.update(data) + enc.final
+    
     <<~"SRC"
       #! #{RUBY}
       # frozen_string_literal: true
@@ -74,8 +82,19 @@ module Create
 
       require 'openssl'
 
-      %x( printf "#{pw1}" | pbcopy )
+      def clean(s)
+        s.bytes.select{ |e| (0x20..0x7f)===e.ord }.map(&:chr).join
+      end
 
+      dec = OpenSSL::Cipher.new("AES-256-CBC")
+      dec.decrypt
+      salt = #{salt.inspect}
+      key_iv = OpenSSL::PKCS5.pbkdf2_hmac_sha1(ARGV[0], salt, 2000, dec.key_len + dec.iv_len)
+      dec.key = key_iv[0, dec.key_len]
+      dec.iv = key_iv[dec.key_len, dec.iv_len]
+      decrypted_data = dec.update(#{encrypted_data.inspect}) + dec.final
+      pw = clean(decrypted_data)
+      %x( printf "%s" "##{""}{pw}" | pbcopy )
     SRC
   end
 
@@ -85,10 +104,19 @@ module Create
     invalid_command(cmd) unless /\A[a-zA-Z0-9_]+\z/===cmd
     no_pw1 unless pw1
     no_pw2 unless pw2
+    path = File.join( "/usr/local/bin", cmd )
+    if File.exist?(path)
+      path_exist(path)
+    end
     src = make_cmd( pw1, pw2 )
     mode = File::Constants::CREAT | File::Constants::WRONLY | File::Constants::EXCL
-    File.open( cmd, mode ){ |f| f.puts src }
-    FileUtils.chmod( "+x", cmd )
+    File.open( path, mode ){ |f| f.puts src }
+    FileUtils.chmod( "+x", path )
+  end
+
+  def self.path_exist(path)
+    puts "Path exist: #{path}"
+    exit
   end
 
   def self.invalid_command(cmd)
