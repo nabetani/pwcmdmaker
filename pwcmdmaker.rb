@@ -50,7 +50,7 @@ UUID = "0e1eb11a-4693-41cc-97e0-f4dc2b3279fa"
 CMD_PLACE = "/usr/local/bin"
 
 def acceptable?(cmd)
-  /\A[a-zA-Z0-9_]+\z/===cmd
+  /\A[a-zA-Z0-9_\-\.]+\z/===cmd
 end
 
 def password_command?(fn)
@@ -113,7 +113,7 @@ module Create
   def self.run
     cmd, pw1, pw2 = ARGV[1,3]
     no_cmomand unless cmd
-    invalid_command unless acceptable?(cmd)
+    invalid_command(cmd) unless acceptable?(cmd)
     no_pw1 unless pw1
     no_pw2 unless pw2
     path = File.join( CMD_PLACE, cmd )
@@ -131,8 +131,8 @@ module Create
     exit
   end
 
-  def self.invalid_command
-    puts "Command name must consist of alphanumeric characters only"
+  def self.invalid_command(cmd)
+    puts "'#{cmd}' is not a valid command name"
     exit
   end
 
@@ -157,7 +157,7 @@ module Remove
   def self.run
     cmd = ARGV[1]
     no_cmomand unless cmd
-    invalid_command unless acceptable?(cmd)
+    invalid_command(cmd) unless acceptable?(cmd)
     path = File.join(CMD_PLACE, cmd)
     no_file(path) unless File.exist?(path)
     no_pw_cmd(path) unless password_command?(path)
@@ -179,8 +179,8 @@ module Remove
     exit
   end
 
-  def self.invalid_command
-    puts "Command name must consist of alphanumeric characters only"
+  def self.invalid_command(cmd)
+    puts "'#{cmd}' is not a valid command name"
     exit
   end
 
