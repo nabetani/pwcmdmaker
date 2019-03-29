@@ -144,11 +144,28 @@ module Create
 end
 
 def remove
-
+  
 end
 
-def list
+def password_command?(fn)
+  return false unless File.split(fn)[0]==CMD_PLACE
+  src = File.open( fn ){ |f| f.read(300) }
+  src.include?(UUID)
+end
 
+module List
+  def self.show(list)
+    list.each do |i|
+      puts( " "*4 + File.split(i)[1] )
+    end
+  end
+
+  def self.run
+    list = Dir.glob( File.join(CMD_PLACE, "*") ).sort.select{ |fn|
+      password_command?(fn)
+    }
+    show list
+  end
 end
 
 def version
@@ -181,7 +198,7 @@ module Main
     when "remove"
       remove
     when "list"
-      list
+      List.run
     when "version"
       version
     when "help"
