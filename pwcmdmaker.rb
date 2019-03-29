@@ -48,7 +48,24 @@ RUBY = "/System/Library/Frameworks/Ruby.framework/Versions/2.3/usr/bin/ruby"
 UUID = "0e1eb11a-4693-41cc-97e0-f4dc2b3279fa"
 
 module Create
+  def self.make_data(src)
+    jamsrc = [*"\x0".."\x1f", *"\x80".."\xff"]
+    len = Array.new(15){ |e| [e]*(2**e-1) }.flatten
+    jams = Array.new(src.size){
+      Array.new(len.sample){ jamsrc.sample }
+    }
+    src.chars.zip(jams).flatten.join
+  end
+
+  def self.clean(s)
+    s.bytes.select{ |e| (0x20..0x7f)===e.ord }.map(&:chr).join
+  end
+
   def self.make_cmd( pw1, pw2 )
+    data = make_data(pw1)
+    p data
+    p clean(data)
+
     <<~"SRC"
       #! #{RUBY}
       # frozen_string_literal: true
