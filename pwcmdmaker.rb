@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# version 0.1.1
+
 =begin
 usage: ruby $CMD_NAME$ <command> [<args>]
 
@@ -54,7 +56,8 @@ def list
 end
 
 def version
-
+  v = /\#\s*version\s*([\d\.]+)\s*[\r\n]/i.match(File.open( __FILE__, &:read ))[1]
+  puts "#{File.split(__FILE__)[1]} version #{v}"
 end
 
 def help
@@ -83,7 +86,7 @@ def main
   when "list"
     list
   when "version"
-    versoin
+    version
   when "help"
     help
   else
