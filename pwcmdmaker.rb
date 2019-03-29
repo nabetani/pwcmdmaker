@@ -49,6 +49,16 @@ UUID = "0e1eb11a-4693-41cc-97e0-f4dc2b3279fa"
 
 CMD_PLACE = "/usr/local/bin"
 
+def acceptable?(cmd)
+  /\A[a-zA-Z0-9_]+\z/===cmd
+end
+
+def password_command?(fn)
+  return false unless File.split(fn)[0]==CMD_PLACE
+  src = File.open( fn ){ |f| f.read(300) }
+  src.include?(UUID)
+end
+
 module Create
   def self.make_data(src)
     jamsrc = [*"\x0".."\x1f", *"\x80".."\xff"]
@@ -103,7 +113,7 @@ module Create
   def self.run
     cmd, pw1, pw2 = ARGV[1,3]
     no_cmomand unless cmd
-    invalid_command(cmd) unless /\A[a-zA-Z0-9_]+\z/===cmd
+    invalid_command unless acceptable?(cmd)
     no_pw1 unless pw1
     no_pw2 unless pw2
     path = File.join( CMD_PLACE, cmd )
@@ -121,7 +131,7 @@ module Create
     exit
   end
 
-  def self.invalid_command(cmd)
+  def self.invalid_command
     puts "Command name must consist of alphanumeric characters only"
     exit
   end
@@ -143,14 +153,41 @@ module Create
 
 end
 
-def remove
-  
-end
+module Remove
+  def self.run
+    cmd = ARGV[1]
+    no_cmomand unless cmd
+    invalid_command unless acceptable?(cmd)
+    path = File.join(CMD_PLACE, cmd)
+    no_file(path) unless File.exist?(path)
+    no_pw_cmd(path) unless password_command?(path)
+    $stderr.puts( "remove #{path}?" )
+    ans = $stdin.gets.downcase.strip
+    if ans=="y"
+      FileUtils.rm(path)
+      puts "#{path} was deleted."
+    end
+  end
 
-def password_command?(fn)
-  return false unless File.split(fn)[0]==CMD_PLACE
-  src = File.open( fn ){ |f| f.read(300) }
-  src.include?(UUID)
+  def self.no_pw_cmd(path)
+    puts "#{path} is not password command"
+    exit
+  end
+
+  def self.no_file(path)
+    puts "#{path} does not exist"
+    exit
+  end
+
+  def self.invalid_command
+    puts "Command name must consist of alphanumeric characters only"
+    exit
+  end
+
+  def self.no_cmomand
+    puts "no cmomand specified"
+    exit
+  end
 end
 
 module List
@@ -191,17 +228,22 @@ module Main
     puts( "'#{ARGV[0]}' is unknown command.\nRun 'ruby #{__FILE__} help' for usage." )
   end
 
+  def self.invalid_command
+    puts "'#{ARGV[0]}' is not a valid command. See ruby #{__FILE__} help."
+    exit
+  end
+
   def self.main
     case ARGV[0]
     when "create"
       Create.run
     when "remove"
-      remove
+      Remove.run
     when "list"
       List.run
     when "version"
       version
-    when "help"
+    when "help", nil
       help
     else
       invalid_command
