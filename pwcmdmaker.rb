@@ -42,8 +42,57 @@ This comand prints the version of this script.
 =end
 
 require 'openssl'
+require 'fileutils'
 
-def create
+RUBY = "/System/Library/Frameworks/Ruby.framework/Versions/2.3/usr/bin/ruby"
+UUID = "0e1eb11a-4693-41cc-97e0-f4dc2b3279fa"
+
+module Create
+  def self.make_cmd( pw1, pw2 )
+    <<~"SRC"
+      #! #{RUBY}
+      # frozen_string_literal: true
+
+      # UUID:#{UUID}
+
+      require 'openssl'
+
+      %x( printf "#{pw1}" | pbcopy )
+
+    SRC
+  end
+
+  def self.run
+    cmd, pw1, pw2 = ARGV[1,3]
+    no_cmomand unless cmd
+    invalid_command(cmd) unless /\A[a-zA-Z0-9_]+\z/===cmd
+    no_pw1 unless pw1
+    no_pw2 unless pw2
+    src = make_cmd( pw1, pw2 )
+    mode = File::Constants::CREAT | File::Constants::WRONLY | File::Constants::EXCL
+    File.open( cmd, mode ){ |f| f.puts src }
+    FileUtils.chmod( "+x", cmd )
+  end
+
+  def self.invalid_command(cmd)
+    puts "Command name must consist of alphanumeric characters only"
+    exit
+  end
+
+  def self.no_cmomand
+    puts "no cmomand specified"
+    exit
+  end
+
+  def self.no_pw1
+    puts "no password1 specified"
+    exit
+  end
+
+  def self.no_pw2
+    puts "no password2 specified"
+    exit
+  end
 
 end
 
@@ -60,41 +109,43 @@ def version
   puts "#{File.split(__FILE__)[1]} version #{v}"
 end
 
-def help
-  src = File.open( __FILE__, &:read )
-  key = case ARGV[1]
-  when "create", "remove", "list", "version"
-    "=begin " + ARGV[1]
-  else
-    "=begin"
+module Main
+  def self.help
+    src = File.open( __FILE__, &:read )
+    key = case ARGV[1]
+    when "create", "remove", "list", "version"
+      "=begin " + ARGV[1]
+    else
+      "=begin"
+    end
+    b = src.index( key )+key.size+1
+    len = src[b, src.size].index( "=end" )
+    puts src[b,len].gsub( "$CMD_NAME$", File.split(__FILE__)[1] ) + "\n"
   end
-  b = src.index( key )+key.size+1
-  len = src[b, src.size].index( "=end" )
-  puts src[b,len].gsub( "$CMD_NAME$", File.split(__FILE__)[1] ) + "\n"
-end
 
-def invalid_command
-  puts( "'#{ARGV[0]}' is unknown command.\nRun 'ruby #{__FILE__} help' for usage." )
-end
+  def self.extend
+    puts( "'#{ARGV[0]}' is unknown command.\nRun 'ruby #{__FILE__} help' for usage." )
+  end
 
-def main
-  case ARGV[0]
-  when "create"
-    create
-  when "remove"
-    remove
-  when "list"
-    list
-  when "version"
-    version
-  when "help"
-    help
-  else
-    invalid_command
+  def self.main
+    case ARGV[0]
+    when "create"
+      Create.run
+    when "remove"
+      remove
+    when "list"
+      list
+    when "version"
+      version
+    when "help"
+      help
+    else
+      invalid_command
+    end
   end
 end
 
-main
+Main.main
 
 =begin
 
