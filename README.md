@@ -5,7 +5,7 @@
 ## これは何？
 
 ```shell
-$ ruby pwcmdmaker create secret-command czqrMVkOGYaZAfUIHX4m himitsu
+$ ruby pwcmdmaker.rb create secret-command czqrMVkOGYaZAfUIHX4m himitsu
 ```
 
 と実行すると、 `/usr/local/bin` に `secret-command` というコマンドができる。
