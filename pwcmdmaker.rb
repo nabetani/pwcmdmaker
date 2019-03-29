@@ -8,6 +8,7 @@ These are supported commands:
   create   create command with password
   remove   remove command
   list     list commands
+  version  print version of this script
 
 Use "ruby $CMD_NAME$ help <command>" for more information about a command.
 =end
@@ -32,6 +33,12 @@ usage: ruby $CMD_NAME$ list command-name
 List commands created by this command in `/usr/local/bin/`
 =end
 
+=begin version
+usage: ruby $CMD_NAME$ version
+
+This comand prints the version of this script.
+=end
+
 require 'openssl'
 
 def create
@@ -46,10 +53,14 @@ def list
 
 end
 
+def version
+
+end
+
 def help
   src = File.open( __FILE__, &:read )
   key = case ARGV[1]
-  when "create", "remove", "list"
+  when "create", "remove", "list", "version"
     "=begin " + ARGV[1]
   else
     "=begin"
@@ -71,6 +82,8 @@ def main
     remove
   when "list"
     list
+  when "version"
+    versoin
   when "help"
     help
   else
