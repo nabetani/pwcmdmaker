@@ -47,6 +47,8 @@ require 'fileutils'
 RUBY = "/System/Library/Frameworks/Ruby.framework/Versions/2.3/usr/bin/ruby"
 UUID = "0e1eb11a-4693-41cc-97e0-f4dc2b3279fa"
 
+CMD_PLACE = "/usr/local/bin"
+
 module Create
   def self.make_data(src)
     jamsrc = [*"\x0".."\x1f", *"\x80".."\xff"]
@@ -104,7 +106,7 @@ module Create
     invalid_command(cmd) unless /\A[a-zA-Z0-9_]+\z/===cmd
     no_pw1 unless pw1
     no_pw2 unless pw2
-    path = File.join( "/usr/local/bin", cmd )
+    path = File.join( CMD_PLACE, cmd )
     if File.exist?(path)
       path_exist(path)
     end
